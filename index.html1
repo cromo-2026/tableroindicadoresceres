@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CERES · Indicadores de Mercado</title>
+<style>
+  :root{
+    --navy:#0E2841; --ink-900:#141B21; --black:#000; --red:#FF1E01; --red-ink:#C0170A;
+    --cream:#F4F1EA; --gray:#D0D1D3; --white:#FFFFFF;
+    --bg:#F4F1EA; --card:#FFFFFF; --ink:#141B21; --muted:#6E7377; --line:#E4E0D6;
+    --up:#0E2841; --down:#C0170A; --warn:#B8860B; --soft:#EAEFF3;
+    --shadow:0 1px 3px rgba(20,27,33,.08),0 6px 18px rgba(20,27,33,.07);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",Roboto,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45}
+  .wrap{max-width:1460px;margin:0 auto;padding:0 20px 48px}
+  /* Header */
+  header{background:linear-gradient(135deg,#0E2841 0%,#0B2036 55%,#141B21 100%);color:#fff;border-bottom:3px solid var(--red)}
+  .hd{max-width:1460px;margin:0 auto;padding:20px 20px 22px;display:flex;flex-wrap:wrap;
+    align-items:center;gap:16px 24px;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:18px}
+  .logo,.logo img{height:82px;width:auto;display:block;flex:0 0 auto}
+  .brand h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.2px}
+  .brand .sub{margin:3px 0 0;font-size:12px;color:#B9C4CE;font-weight:600;text-transform:uppercase;letter-spacing:1.4px}
+  .updated{font-size:12px;color:#E7ECF1;font-weight:700;text-align:right;line-height:1.4;text-transform:uppercase;letter-spacing:.6px}
+  .updated b{color:#fff}
+  /* Sections */
+  section{margin-top:30px}
+  .sec-head{display:flex;align-items:center;gap:12px 18px;margin:0 0 15px;border-bottom:2px solid var(--line);
+    padding-bottom:9px;justify-content:space-between;flex-wrap:wrap}
+  .sh-left{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .sec-head h2{margin:0;font-size:16px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;
+    border-left:4px solid var(--red);padding-left:10px}
+  .sec-head .note{font-size:12.5px;color:var(--muted)}
+  /* toggle moneda por sección */
+  .curmini{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .curmini button{border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:800;color:var(--muted);
+    padding:6px 15px;border-radius:6px;cursor:pointer;transition:.15s}
+  .curmini button.on{background:var(--navy);color:#fff}
+  .curmini button:not(.on):hover{background:var(--cream)}
+  .cur-tag{font-size:11px;font-weight:700;color:var(--muted);margin-right:2px;text-transform:uppercase;letter-spacing:.5px}
+  /* Grid + cards */
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(5,1fr)}
+  .grid-ins{grid-template-columns:repeat(4,1fr)}   /* insumos: 4 arriba / 3 abajo */
+  @media(max-width:1120px){ .grid{grid-template-columns:repeat(3,1fr)} .grid-ins{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:760px){ .grid{grid-template-columns:repeat(2,1fr)} .grid-ins{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:480px){ .grid{grid-template-columns:1fr} .grid-ins{grid-template-columns:1fr} }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    overflow:hidden;display:flex;flex-direction:column;min-width:0}
+  .card .bar{height:5px;background:linear-gradient(90deg,var(--navy) 62%,var(--red))}
+  .card .body{padding:14px 15px 15px;display:flex;flex-direction:column;gap:11px;flex:1;min-width:0}
+  .c-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .name-wrap{display:flex;flex-direction:column;flex:1;min-width:0}
+  .c-title .name{font-size:15.5px;font-weight:800;color:var(--ink);line-height:1.15}
+  .var-corner{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:0 0 auto}
+  .badge{font-size:12px;font-weight:800;padding:4px 9px;border-radius:20px;white-space:nowrap;cursor:help}
+  .badge.up{background:rgba(14,40,65,.10);color:var(--up)} .badge.down{background:rgba(255,30,1,.11);color:var(--down)}
+  .badge.na{background:#EFEDE6;color:var(--muted)}
+  .var-sub{font-size:9.5px;color:var(--muted);font-weight:600;line-height:1;text-align:right}
+  .var-line{font-size:11px;font-weight:800;text-align:right;margin-top:-6px;line-height:1.2;overflow-wrap:anywhere}
+  .var-line.up{color:var(--up)} .var-line.down{color:var(--down)} .var-line.na{color:var(--muted);font-weight:600}
+  .var-line span{color:var(--muted);font-weight:600;font-size:10px}
+  .serie-lbl{font-size:12px;color:var(--muted);font-weight:600}
+  .kpi-main{background:var(--soft);border-radius:11px;padding:11px 13px;display:flex;flex-direction:column;gap:2px;
+    border-left:4px solid var(--navy);min-width:0}
+  .kpi-main .k-lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+  .kpi-main .k-val{font-size:24px;font-weight:800;line-height:1.05;color:var(--ink);white-space:nowrap}
+  .cc{font-size:11px;font-weight:700;color:var(--muted);margin-left:4px;letter-spacing:.3px;white-space:nowrap}
+  .kpi-main .cc{font-size:12px}
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .kpi{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+  .kpi .k-lab{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:700}
+  .kpi .k-val{font-size:15px;font-weight:700;margin-top:3px;line-height:1.12;color:var(--ink);overflow-wrap:normal;word-break:keep-all}
+  .kpi .k-sub{font-size:9.5px;color:var(--muted);margin-top:2px}
+  .kpi.na .k-val{font-size:12px;color:var(--muted);font-weight:600}
+  .k-na{color:var(--muted)}
+  .flag{font-size:10px;color:var(--warn);margin-top:2px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+  .src-note{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:2px}
+  .na-block{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--muted);font-weight:600;font-size:13px;text-align:center}
+  /* Chart */
+  .chart-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px 18px}
+  .chart-top{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .chart-top .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  select.prodsel{font:inherit;font-weight:700;color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:8px 12px;background:#fff;cursor:pointer;min-width:230px}
+  .rng{display:flex;gap:4px;background:var(--cream);border-radius:9px;padding:3px}
+  .rng button{border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);
+    padding:6px 12px;border-radius:7px;cursor:pointer}
+  .rng button.on{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .chart-cur{font-size:12.5px;color:var(--muted);font-weight:700}
+  .chart-cur b{color:var(--navy)}
+  .chart-wrap{position:relative;width:100%}
+  svg.chart{display:block;width:100%;height:320px;touch-action:none}
+  .tt{position:absolute;pointer-events:none;background:var(--navy);color:#fff;padding:7px 10px;border-radius:8px;
+    font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translate(-50%,-115%);transition:opacity .08s;white-space:nowrap;z-index:5}
+  .tt b{font-size:13px}
+  /* Precipitación */
+  .pp-badge-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .pp-badge-sub{font-size:10.5px;color:var(--muted);font-weight:600;text-align:right}
+  .pp-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .pp-legend span{display:inline-flex;align-items:center;gap:7px}
+  .pp-sq{width:14px;height:14px;border-radius:3px;background:var(--navy);flex:0 0 auto}
+  .pp-lnr{width:22px;height:0;border-top:3px solid var(--red);flex:0 0 auto} .pp-lnr.dash{border-top:3px dashed var(--red)}
+  /* Footer */
+  footer{margin-top:36px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12.5px}
+  footer .src{font-weight:700;color:var(--ink)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  @media(max-width:560px){ .brand h1{font-size:18px} .logo,.logo img{height:64px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div class="brand">
+      <div class="logo"><img alt="CERES Agro-tecnología" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkoAAAKVCAYAAAAwS8RjAABVVklEQVR4nO3d733bttbAcbWf571wJzA6gdEJjEwQZgKzE4R3gjATlJkg9ASXmSDwBBeaoNAEhSbQ8yLmrepSf00QAPn7vmnjOBJEiuAhcHDw0woAEiCEEEop1f9Za60P/16+eOv7uBf9n7333lpr+z8bY8xb3wPAfPwUuwEA5q8Pgl7/d7VarR4eHh4iN2/Qbrfb9QFUHzxZa20fWHnvfcTmAZgIgRKA0SillJRSqhdCCJFqIDSG5+fn536Eylpr+//GbheA8RAoAbhaPyKktdZ9cHR/f38fu12p2Gw2G3uA6TwgXwRKAM7qA6L+v3d3d3ex25Sbw+DJGGMYeQLyQKAE4G+EEOIwMJrz1FlMfQ6UORC7TQD+iUAJwEq/KIqiYAotnufn5+eu6zpGnIB0ECgBCySllEVRFFpr/f79+/ex24N/2u12uz5o6rquY5UdEAeBErAQSilVlmWptdaMGuWnH23quq47rAMFICwCJWDGihdaa00C9nxsNptN27YtQRMAAFdSSqm2bVvvvd9j9qy1tqqqaoyq5QAAzJKUUjZN0zjnXOwbN+Kx1tqyLEshhIj9nQQAICohhCjLsrTW2tg3aKSnbdu2KIoi9vcUAIBJaa1127Zt7Bsx8uCcc3Vd10zNAQBmSwghqqqqmFrDW3Rd12mtdezvMwAAo5BSShKzMTbnnCOXCQCQLa21NsaY2DdUzJv33jdN0zAtBwDIQlmWJdNriKFt25aACQCQnH71GgESUmCMMeQxAQCiE0KIuq5r8o+QIgImAEAUBEjICQETAGAyBEjIlTHGKKVU7GsIADBD5CBhLkj6BgCMRmutCZAwR03TNNRhAgDcRCmlqIOEufPe+7qu69jXGwAgE0IIwT5sWBrnnGMDXgDASVVVVSRqY8mMMYb8JQDA35CHBPxdXdc1+UsAsHBMswHHOecc9ZcAYKGYZgMu03Vdx+gScvZT7AYAOZFSyrZt24eHh4fYbQFysdvtdmVZll3XdbHbAlzr59gNAHJRVVVlrbUEScB11uv1+j//+c9/GF1CjhhRAs5gFAkYD6NLyA0jSsAJjCIB42J0CblhRAkYIIQQXdd1BEhAOLvdblcURWGMMbHbAhzDiBLwSlEUhXPOESQBYa3X6/X379+/N03TxG4LcAwjSsALIYRomqZ5fHx8jN0WYGk2m82mLMvSWmtjtwU4xIgSsPprE1uCJCCO+/v7e2OMKcuyjN0W4BCBEhavLMvSGGPu7+/vY7cFWLL1er3++vXr17ZtWxK9kQqm3rBYTLUB6dpsNps+XzB2W7BsBEpYJCml7LquYxQJSBc1l5ACpt6wOFprba21BElA2vqaS3Vd17HbguUiUMKiVFVVff/+/ft6vV7HbguAy3z69OkTeUuIhak3LAL5SED+yFtCDARKmD0hhGBVGzAPu91u10+fx24LloGpN8yaUko55xxBEjAP6/V6Tb0lTIlACbPV7yFFPhIwL329paqqqthtwfwx9YZZKsuy/Pr169fY7QAQ1tPT0xOjSwiJESXMTtM0DUESsAyPj4+PrIhDSIwoYVbatm1Z2QYsz2az2Wittffex24L5oURJcyCEEIQJAHL1W+qy8gSxsaIErLH8n8APWotYWwESsgaQRKA16i1hDEx9YZsESQBGNLXWlJKqdhtQf4IlJAlgiQApxAsYSwESsgOQRKASxAsYQwESsgKQRKAaxAs4a0IlJANgiQAtyBYwlsQKCELBEkA3oJgCbeiPACSR5AEYCzb7XarlFJU8MalGFFC0giSAIzp7u7ujgreuAaBEpLWtm1LkARgTGx3gmsQKCFZbdu279+/fx+7HQDm5/7+/r7rui52O5A+AiUkiQ1uAYT28PDw0LZtG7sdSBuBEpJTlmVJkARgCo+Pj49N0zSx24F0seoNSSnLsvz69evX2O0AsCy//fbbb4wuYQiBEpKhlFLGGLNer9ex2wJgeT58+PCBvCW8RqCEJEgppbXWEiQBiGW32+201tpaa2O3BekgRwnRCSFE13UdQRKAmNbr9brruo6yAThEoIToqJUEIBV9QcrY7UA6CJQQVdM0DbWSAKTk/v7+nsRu9MhRQjSscAOQMlbCYbUiUEIkrHADkINff/31V5K7l41ACZMTQghrrb27u7uL3RYAOGW32+2klNJ772O3BXGQo4TJtW3bEiQByEG/Ei52OxAPgRImVVVVRfI2gJw8PDw81HVdx24H4mDqDZPRWuvv379/j90OALjFu3fv3lE6YHkIlDAJIYRwzjmStwHkinylZWLqDZNo27YlSAKQM/KVlolACcGRlwRgLshXWh6m3hCUUkr997///W/sdgDAmKivtBwESgjK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//Xe+67rujmMOP3MCAMAAPlJud5RHzh9+vTp0/fv37/v9/u9McY0TdOUZVnmlOMUbOqNxNdlUUqpOSdSCiFEiL23gKks4aF4aXuVOefc58+fP3/69OlT7LZc4uFF/+fdbrez1trDKbuIzTtOa633AST7gRfOGGNCnG/nnJvzNG5d13WI45bqdRLis+73+33sz5WDUH3yfr/fV1VVxf58oQghhPfehzhuKU8dCSGEtdaG+NwxWGtt0zRNURRFKveUoMncWI67u7s755xr27Y1xpi51FVSSqmiKApGkzAHv//+++9FURRd13VzSbYVQgittS7LsoyZ2ByL996XZVkaY8wcPn+fIP7x48ePq9WPelGHI05R7i2MKC1LqBEl3CbV6yTU5439uXIQckQJt0l5RKlXFEUR+zhNoR9xmvKcBK3MDQAAwuu6rvvtt99+i92O0PrRpu/fv3/vV9aVZVmGnKYjUAIAYAbatm3fvXv3brfb7WK3ZQr9yrqvX79+/fPPP/8MFTQRKAERUZQVSF9OOZfGGKO11lPsBZea10HTWKsgCZSAiAiUgPTllvhurbVKKfX58+fPsdsSy/v379//5z//+U+/oe9bRpkIlICIcuuAgaXJeWSmruv6119//XXJdQ37DX3fEjARKAERESgBacv9GrXWWq21fvfu3bslB0zr9XrdB0zX1hMjUAIi2Ww2G6begLR1XdfFbsMY+tyld+/evXt6enqK3Z5Y1uv1+vfff//dGGMurVZPoAREktKGlgD+abvdbucSKPWMMaYsy/Jf//rXv/7973//O+epxbd4eHh46I/Fud8lUAIi2O12u7l1wMDcpLzp7Ft5733TNI1SSv3666+/fvny5ct2u93GbteU1uv1+uvXr1/PPbQSKAERlGVZ5rTkGFiazWazqeu6jt2OKVhrbVVVlZRS/vLLL7/8+9///veS8pk+fvz48VRQTKAETOzp6emJ0SQgXbvdbnfJlMwcOedcv0XIv/71r399+PDhw5cvX77MfYru8fHx8ViwxKa4wISenp6eltoBAznY7XY7rbXOfbXbGPotQvoHu34D4t79/f195CaO6vHx8dEYY14HTARKwAR2u92uruuaBG4gXc/Pz89lWZasRh32OnBarX5s4qy11urF3d3dXcQmvtnXr1+/2hf9zwiUgIB2u92ueUFOEpCm5+fn57qu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"></div>
+      <div>
+        <h1>Indicadores de Mercado</h1>
+        <p class="sub">Equipo Comercial · Precios de mercado</p>
+      </div>
+    </div>
+    <div class="updated">Datos hasta <b id="lastm">—</b></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section>
+    <div class="sec-head">
+      <div class="sh-left"><h2>Productos agropecuarios</h2><span class="note">precios país · fuente ODEPA</span></div>
+      <div><span class="cur-tag">Moneda</span><span class="curmini" id="cur-prod"><button data-m="CLP">CLP</button><button data-m="USD">USD</button><button data-m="EUR">EUR</button></span></div>
+    </div>
+    <div class="grid" id="grid-prod"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sh-left"><h2>Productos agropecuarios internacional</h2><span class="note">precios FOB · USD/ton</span></div>
+      <div><span class="cur-tag">Moneda</span><span class="curmini" id="cur-intl"><button data-m="CLP">CLP</button><button data-m="USD">USD</button><button data-m="EUR">EUR</button></span></div>
+    </div>
+    <div class="grid grid-ins" id="grid-intl"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sh-left"><h2>Evolución histórica · productos</h2><span class="note">desde enero 2023 · incluye internacionales</span></div></div>
+    <div class="chart-card">
+      <div class="chart-top">
+        <div class="left">
+          <select class="prodsel" id="sel-p"></select>
+          <div class="rng" id="rng-p"><button data-r="all" class="on">Todo</button><button data-r="24">24m</button><button data-r="12">12m</button></div>
+        </div>
+        <div class="chart-cur">Moneda: <b id="cur-p">CLP</b></div>
+      </div>
+      <div class="chart-wrap"><svg class="chart" id="svg-p" preserveAspectRatio="none"></svg><div class="tt" id="tt-p"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sh-left"><h2>Moneda e insumos</h2><span class="note">precios internacionales</span></div>
+      <div><span class="cur-tag">Moneda</span><span class="curmini" id="cur-ins"><button data-m="CLP">CLP</button><button data-m="USD">USD</button><button data-m="EUR">EUR</button></span></div>
+    </div>
+    <div class="grid grid-ins" id="grid-ins"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sh-left"><h2>Evolución histórica · insumos</h2><span class="note">desde enero 2023</span></div></div>
+    <div class="chart-card">
+      <div class="chart-top">
+        <div class="left">
+          <select class="prodsel" id="sel-i"></select>
+          <div class="rng" id="rng-i"><button data-r="all" class="on">Todo</button><button data-r="24">24m</button><button data-r="12">12m</button></div>
+        </div>
+        <div class="chart-cur">Moneda: <b id="cur-i">USD</b></div>
+      </div>
+      <div class="chart-wrap"><svg class="chart" id="svg-i" preserveAspectRatio="none"></svg><div class="tt" id="tt-i"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sh-left"><h2>Meteorología por estación</h2><span class="note">precipitación (mm) o temperatura (°C) · Normal 1991–2020 · desde 2024</span></div></div>
+    <div class="chart-card">
+      <div class="chart-top">
+        <div class="left">
+          <select class="prodsel" id="sel-pp"></select>
+          <div class="curmini" id="view-pp"><button data-v="mensual" class="on">Precipitación mensual</button><button data-v="acumulado">Precipitación acumulada</button><button data-v="temp">Temperatura</button></div>
+        </div>
+        <div class="pp-badge-wrap"><span class="badge" id="pp-badge">—</span><span class="pp-badge-sub" id="pp-badgesub"></span></div>
+      </div>
+      <div class="chart-wrap"><svg class="chart" id="svg-pp" preserveAspectRatio="none"></svg><div class="tt" id="tt-pp"></div></div>
+      <div class="pp-legend" id="pp-legend"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="src">Fuente: Planilla Excel adjunta (CERES).</div>
+    Los valores provienen exclusivamente de la planilla. La conversión CLP/USD usa únicamente el tipo de cambio mensual del Excel (columna “TC USD”). “No disponible” indica que el dato no existe en la planilla para ese período.
+    <div style="margin-top:8px"><b style="color:var(--ink)">Variación (▲/▼):</b> compara el precio del mes más reciente con el <b>promedio del año anterior (2025)</b>. En el globo se muestra el % y, debajo, la diferencia en pesos/US$. El promedio 2025 es el mismo que aparece en la tarjeta ("Año 2025").</div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--up)"></span> por encima del promedio 2025</span>
+      <span><span class="dot" style="background:var(--down)"></span> por debajo del promedio 2025</span>
+      <span id="foot-novillo"></span>
+    </div>
+    <div style="margin-top:8px;font-size:11.5px" id="foot-gen"></div>
+  </footer>
+</div>
+
+<script>
+const DATA = {"meta": {"generado": "2026-09-15", "fuente": "Planilla CERES · ODEPA / INE / mercados internacionales", "ultimo_mes": "2026-08", "nota_novillo": "", "anio_anterior": 2025, "normal_periodo": "1991–2020"}, "tc": {"2020-01": 746.66, "2020-02": 788.18, "2020-03": 811.1, "2020-04": 835.23, "2020-05": 850.41, "2020-06": 816.47, "2020-07": 813.25, "2020-08": 759.18, "2020-09": 784.27, "2020-10": 784.19, "2020-11": 775.56, "2020-12": 766.0, "2021-01": 710.64, "2021-02": 736.88, "2021-03": 703.65, "2021-04": 736.17, "2021-05": 700.15, "2021-06": 730.43, "2021-07": 732.25, "2021-08": 767.29, "2021-09": 784.39, "2021-10": 798.63, "2021-11": 804.32, "2021-12": 829.94, "2022-01": 855.94, "2022-02": 799.15, "2022-03": 807.26, "2022-04": 777.1, "2022-05": 847.44, "2022-06": 822.25, "2022-07": 905.32, "2022-08": 920.49, "2022-09": 890.9, "2022-10": 971.14, "2022-11": 953.0, "2022-12": 916.36, "2023-01": 856.76, "2023-02": 803.14, "2023-03": 818.67, "2023-04": 792.18, "2023-05": 802.14, "2023-06": 800.89, "2023-07": 826.01, "2023-08": 857.59, "2023-09": 904.62, "2023-10": 904.62, "2023-11": 928.28, "2023-12": 884.67, "2024-01": 932.66, "2024-02": 980.19, "2024-03": 982.38, "2024-04": 943.62, "2024-05": 917.98, "2024-06": 947.78, "2024-07": 948.79, "2024-08": 912.08, "2024-09": 900.01, "2024-10": 950.89, "2024-11": 975.41, "2024-12": 992.12, "2025-01": 990.12, "2025-02": 990.07, "2025-03": 941.76, "2025-04": 931.75, "2025-05": 937.37, "2025-06": 940.21, "2025-07": 930.67, "2025-08": 970.09, "2025-09": 968.64, "2025-10": 958.9, "2025-11": 941.63, "2025-12": 930.89, "2026-01": 883.97, "2026-02": 862.02, "2026-03": 909.89, "2026-04": 897.89, "2026-05": 897.64, "2026-06": 903.38, "2026-07": 930.97, "2026-08": 917.66}, "tc_eur": {"2023-01": 886.236, "2023-02": 856.221, "2023-03": 864.37, "2023-04": 883.018, "2023-05": 866.97, "2023-06": 866.514, "2023-07": 901.269, "2023-08": 933.96, "2023-09": 945.631, "2023-10": 979.063, "2023-11": 956.182, "2023-12": 955.531, "2024-01": 991.299, "2024-02": 1041.205, "2024-03": 1051.632, "2024-04": 1026.934, "2024-05": 989.917, "2024-06": 998.223, "2024-07": 1014.449, "2024-08": 1022.949, "2024-09": 1028.438, "2024-10": 1021.823, "2024-11": 1032.212, "2024-12": 1028.499, "2025-01": 1033.862, "2025-02": 993.273, "2025-03": 1007.567, "2025-04": 1078.888, "2025-05": 1061.662, "2025-06": 1081.293, "2025-07": 1113.625, "2025-08": 1124.737, "2025-09": 1126.735, "2025-10": 1108.605, "2025-11": 1080.785, "2025-12": 1071.039, "2026-01": 1037.0319047619048, "2026-02": 1019.5824999999999, "2026-03": 1052.9109090909094, "2026-04": 1049.8333333333337, "2026-05": 1048.5757894736844, "2026-06": 1041.1457142857143, "2026-07": 1064.17, "2026-08": 1065.109}, "productos": [{"id": "leche", "nombre": "Leche", "series": [{"label": "País", "unidad_clp": "$/litro (s/IVA)", "nativa": "CLP", "meses": {"2021-01": 287.5984538714407, "2023-01": 403.77356807473586, "2024-01": 406.39, "2025-01": 419.23, "2026-01": 422.47, "2021-02": 295.2357024610337, "2023-02": 414.14490060282475, "2024-02": 415.7906982321165, "2025-02": 435.24432299643104, "2026-02": 435.04, "2021-03": 304.8815346952891, "2023-03": 429.8449707293754, "2024-03": 432.80900613792585, "2025-03": 448.4, "2026-03": 453.41538347198195, "2021-04": 338.72, "2023-04": 454.6910862628562, "2024-04": 459.16, "2025-04": 473.8945924868923, "2026-04": 484.142501844893, "2021-05": 344.84, "2023-05": 459.1086815960822, "2024-05": 469.43166016420133, "2025-05": 479.5276630946645, "2026-05": 492.609273445246, "2021-06": 340.59, "2023-06": 454.0067711122581, "2024-06": 459.5209714710883, "2025-06": 471.8671018807812, "2026-06": 482.85542833548317, "2021-07": 337.59, "2023-07": 448.43, "2024-07": 454.51, "2025-07": 469.9313288660363, "2026-07": 484.1139105802018, "2021-08": 333.43, "2023-08": 442.64, "2024-08": 446.92, "2025-08": 462.53379379019987, "2021-09": 309.46, "2023-09": 417.0025954341682, "2024-09": 427.38, "2025-09": 429.20080356818613, "2021-10": 309.72, "2023-10": 404.3427548744843, "2024-10": 416.0, "2025-10": 422.4702537503851, "2021-11": 311.42, "2023-11": 412.4, "2024-11": 420.16, "2025-11": 422.35982427186866, "2021-12": 311.45, "2023-12": 409.09, "2024-12": 418.53, "2025-12": 422.0662553583053}}]}, {"id": "novillo", "nombre": "Carne Novillo Gordo", "series": [{"label": "Novillo gordo", "unidad_clp": "$/kg (vivo, s/IVA)", "nativa": "CLP", "meses": {"2018-01": 1244.9377203524073, "2018-02": 1205.0977916058805, "2018-03": 1215.0, "2018-04": 1210.3537823566128, "2018-05": 1214.98, "2019-06": 1174.7339539134925, "2019-07": 1226.0, "2019-08": 1259.4779887329491, "2019-09": 1302.3001821523353, "2019-10": 1322.5584316988486, "2019-11": 1286.1456344032895, "2019-12": 1262.7654257803547, "2020-01": 1182.5486074690564, "2020-02": 1179.32, "2020-03": 1186.9685114940019, "2020-04": 1168.3821705789146, "2020-05": 1173.6151524008114, "2020-06": 1270.973232587572, "2020-07": 1353.7662481524044, "2020-08": 1556.2943240804457, "2020-09": 1788.81456253772, "2020-10": 1798.8163502164387, "2020-11": 1754.0, "2020-12": 1677.0, "2021-01": 1587.0, "2021-02": 1572.4770874700293, "2021-03": 1611.341650862942, "2021-04": 1705.5679796963354, "2021-05": 1860.0, "2021-06": 1968.0, "2021-07": 2060.0, "2021-08": 2327.0, "2021-09": 2352.0, "2021-10": 2221.0, "2021-11": 2099.454978319225, "2021-12": 1971.0, "2022-01": 1868.0, "2022-02": 1963.0, "2022-03": 2045.0, "2022-04": 2070.0, "2022-05": 2019.6762406876778, "2022-06": 2019.2162207037097, "2022-07": 2045.3382414459202, "2022-08": 2069.313146588317, "2022-09": 2091.0, "2022-10": 2039.0, "2022-11": 1936.0, "2022-12": 1819.0, "2023-01": 1740.0, "2023-02": 1744.0, "2023-03": 1807.0, "2023-04": 1849.0, "2023-05": 1833.0, "2023-06": 1866.0, "2023-07": 1894.0, "2023-08": 1905.0, "2023-09": 1921.0, "2023-10": 1951.0, "2023-11": 1920.0, "2023-12": 1862.0, "2024-01": 1791.0, "2024-02": 1784.0, "2024-03": 1791.0, "2024-04": 1830.596209009433, "2024-05": 1823.8349536045475, "2024-06": 1885.9289597391803, "2024-07": 1986.75, "2024-08": 2086.73, "2024-09": 2140.393233588203, "2024-10": 2186.0246754118093, "2024-11": 2162.207820340824, "2024-12": 2093.8014089596286, "2025-01": 2028.9958980939043, "2025-02": 2132.6131359098426, "2025-03": 2150.0042392477253, "2025-04": 2224.076876311779, "2025-05": 2286.5210506948624, "2025-06": 2335.95, "2025-07": 2510.44, "2025-08": 2667.53, "2025-09": 2791.2850131754685, "2025-10": 2839.5343642959515, "2025-11": 2707.4465664278932, "2025-12": 2564.8022480342215, "2026-01": 2486.186430656966, "2026-02": 2639.88023173286, "2026-03": 2739.199850989304, "2026-04": 2719.55, "2026-05": 2740.7, "2026-06": 2768.19, "2026-07": 2747.01, "2026-08": 2774.97}}]}, {"id": "ternero", "nombre": "Carne Ternero", "series": [{"label": "Terneros", "unidad_clp": "$/kg (vivo, s/IVA)", "nativa": "CLP", "meses": {"2018-01": 1367.2641787828934, "2018-02": 1323.194807968694, "2018-03": 1345.0, "2018-04": 1264.8710616037226, "2018-05": 1233.11, "2018-06": 1200.0037706556009, "2018-07": 1271.66, "2018-08": 1545.6943624251594, "2018-09": 1302.6263267903605, "2018-10": 1306.5980404607462, "2018-11": 1269.0, "2018-12": 1193.1936392912191, "2019-01": 1183.9390948755583, "2019-02": 1133.13, "2019-03": 1109.64, "2019-04": 1044.71, "2019-05": 1046.8595379287863, "2019-06": 1013.5734253717709, "2019-07": 1112.0, "2019-08": 1153.0811988387104, "2019-09": 1123.192065004274, "2019-10": 1102.2596221617123, "2019-11": 1072.7373603442013, "2019-12": 1022.1145451184774, "2020-01": 1059.237298389813, "2020-02": 1046.97, "2020-03": 987.1229264951769, "2020-04": 1011.9651072101628, "2020-05": 1001.3814285869647, "2020-06": 1056.8213345432034, "2020-07": 1154.8164844107396, "2020-08": 1300.9689106023768, "2020-09": 1380.2484521244992, "2020-10": 1451.7365339568307, "2020-11": 1424.0, "2020-12": 1371.0, "2021-01": 1369.0, "2021-02": 1352.5338659106176, "2021-03": 1355.178366154587, "2021-04": 1424.3542821145254, "2021-05": 1485.0, "2021-06": 1644.0, "2021-07": 1776.0, "2021-08": 2080.0, "2021-09": 2223.0, "2021-10": 2168.0, "2021-11": 2061.3831220481634, "2021-12": 1892.0, "2022-01": 1769.0, "2022-02": 1928.0, "2022-03": 2054.0, "2022-04": 2054.0, "2022-05": 1931.3971613616436, "2022-06": 1827.1217934747442, "2022-07": 1940.2615703005536, "2022-08": 2088.7614438718965, "2022-09": 2090.0, "2022-10": 2068.0, "2022-11": 1908.0, "2022-12": 1774.0, "2023-01": 1609.0, "2023-02": 1668.0, "2023-03": 1709.0, "2023-04": 1646.0, "2023-05": 1597.0, "2023-06": 1598.0, "2023-07": 1746.0, "2023-08": 1844.0, "2023-09": 1814.0, "2023-10": 1795.0, "2023-11": 1771.0, "2023-12": 1693.0, "2024-01": 1696.0, "2024-02": 1696.0, "2024-03": 1670.0, "2024-04": 1678.8341171503255, "2024-05": 1583.0, "2024-06": 1651.0, "2024-07": 1867.0, "2024-08": 1943.0, "2024-09": 1974.0, "2024-10": 2053.0, "2024-11": 2028.0, "2024-12": 1945.0, "2025-01": 1903.0, "2025-02": 1968.0, "2025-03": 2044.0, "2025-04": 2087.0, "2025-05": 2090.0, "2025-06": 2154.0, "2025-07": 2417.0, "2025-08": 2716.0, "2025-09": 2898.0, "2025-10": 3035.0, "2025-11": 2363.0, "2025-12": 2375.0, "2026-01": 2538.34, "2026-02": 2735.89, "2026-03": 2888.73, "2026-04": 2828.48, "2026-05": 2739.16, "2026-06": 2760.66, "2026-07": 2804.22, "2026-08": 2982.23}}]}, {"id": "maiz", "nombre": "Maíz Grano", "series": [{"label": "Maíz", "unidad_clp": "$/kg", "nativa": "CLP", "meses": {"2021-03": 207.67, "2023-03": 275.0, "2025-03": 231.0, "2021-04": 204.84, "2023-04": 238.0, "2024-04": 219.09, "2025-04": 235.87, "2026-04": 232.6969696969697, "2021-05": 207.0, "2023-05": 206.22580645161293, "2024-05": 219.0, "2025-05": 232.71, "2026-05": 231.054545454545, "2021-06": 211.05, "2023-06": 198.5, "2024-06": 214.0, "2025-06": 225.9, "2026-06": 230.0, "2021-07": 224.55, "2023-07": 190.0, "2024-07": 216.0, "2026-07": 229.2, "2021-08": 238.75, "2023-08": 190.0, "2024-08": 223.5, "2021-09": 237.22, "2024-09": 230.0, "2021-10": 246.05, "2021-11": 270.0}}]}, {"id": "trigo", "nombre": "Trigo", "series": [{"label": "Trigo intermedio", "unidad_clp": "$/kg", "nativa": "CLP", "meses": {"2021-01": 195.0, "2023-01": 337.47900883838383, "2024-01": 231.0, "2025-01": 262.32289505124817, "2026-01": 239.31383257382757, "2021-02": 198.0, "2023-02": 313.37179487179486, "2024-02": 225.0, "2025-02": 258.8556744640353, "2026-02": 237.4232699781062, "2021-03": 201.0, "2023-03": 304.84375, "2024-03": 228.0, "2025-03": 267.0, "2026-03": 240.53124703253735, "2021-04": 205.0, "2023-04": 300.3333333333333, "2024-04": 236.0, "2025-04": 281.95873015873013, "2026-04": 251.31507936507936, "2021-05": 208.0, "2023-05": 301.6666666666667, "2024-05": 242.0, "2025-05": 279.77333333333337, "2026-05": 260.69297235023043, "2021-06": 212.0, "2023-06": 240.0, "2024-06": 251.0, "2025-06": 285.7555555555556, "2026-06": 271.43333333333334, "2021-07": 221.0, "2023-07": 260.0, "2024-07": 259.0, "2025-07": 291.2962962962963, "2026-07": 270.55128205128204, "2021-08": 240.0, "2023-08": 275.0, "2024-08": 255.0, "2025-08": 295.94086021505376, "2021-09": 249.0, "2024-09": 263.10919540229884, "2025-09": 298.75, "2021-10": 250.0, "2024-10": 275.99382716049377, "2025-10": 295.96153846153845, "2021-11": 263.0, "2024-11": 281.8333333333333, "2025-11": 285.0, "2021-12": 303.0, "2023-12": 239.0, "2024-12": 271.45344827586206, "2025-12": 243.0}}]}, {"id": "papa_may", "nombre": "Papa · Mercado mayorista", "series": [{"label": "Mercado mayorista", "unidad_clp": "$/25 kg (c/IVA)", "nativa": "CLP", "meses": {"2021-01": 9813.0, "2023-01": 11733.289841769536, "2024-01": 11482.0, "2025-01": 5712.0, "2026-01": 7729.0, "2021-02": 6909.0, "2023-02": 11676.297770553076, "2024-02": 10135.0, "2025-02": 6859.0, "2026-02": 7578.0, "2021-03": 6695.0, "2023-03": 11468.876893511191, "2024-03": 9723.0, "2025-03": 5905.25, "2026-03": 8895.0, "2021-04": 6725.0, "2023-04": 11338.218347791575, "2024-04": 9720.0, "2025-04": 6590.0, "2026-04": 10102.0, "2021-05": 6445.0, "2023-05": 11621.639593015783, "2024-05": 11599.0, "2025-05": 6931.0, "2026-05": 9890.0, "2021-06": 6784.0, "2023-06": 13609.280761620159, "2024-06": 14792.0, "2025-06": 6596.0, "2026-06": 9862.0, "2021-07": 7746.0, "2023-07": 18326.0, "2024-07": 13578.5, "2025-07": 5922.0, "2026-07": 12429.0, "2021-08": 8269.0, "2023-08": 25593.0, "2024-08": 13578.5, "2025-08": 5831.0, "2026-08": 15380.0, "2021-09": 9442.0, "2023-09": 29222.075207372778, "2024-09": 14661.0, "2025-09": 5855.0, "2021-10": 10833.0, "2023-10": 28371.77344230973, "2024-10": 22685.0, "2025-10": 6157.0, "2021-11": 10885.0, "2023-11": 31003.0, "2024-11": 14300.0, "2025-11": 6239.0, "2021-12": 9738.0, "2023-12": 17463.0, "2024-12": 7907.0, "2025-12": 6280.0}}]}, {"id": "papa_fer", "nombre": "Papa · Feria libre", "series": [{"label": "Feria libre", "unidad_clp": "$/kg (c/IVA)", "nativa": "CLP", "meses": {"2021-01": 688.0, "2023-01": 745.5, "2024-01": 930.0, "2025-01": 596.0, "2026-01": 589.0, "2021-02": 597.0, "2023-02": 724.5, "2024-02": 749.0, "2025-02": 538.57, "2026-02": 594.0, "2021-03": 546.0, "2023-03": 721.5, "2024-03": 708.0, "2025-03": 536.56, "2026-03": 630.0, "2021-04": 529.0, "2023-04": 733.0, "2024-04": 691.0, "2025-04": 549.0, "2026-04": 699.0, "2021-05": 517.0, "2023-05": 725.0, "2024-05": 739.0, "2025-05": 565.0, "2026-05": 700.0, "2021-06": 512.0, "2023-06": 803.4326666666666, "2024-06": 855.0, "2025-06": 568.0, "2026-06": 698.0, "2021-07": 554.0, "2023-07": 1025.0, "2024-07": 812.0, "2025-07": 548.0, "2026-07": 831.0, "2021-08": 580.0, "2023-08": 1368.0, "2024-08": 794.0, "2025-08": 540.0, "2026-08": 935.0, "2021-09": 597.0, "2023-09": 1624.0, "2024-09": 838.0, "2025-09": 577.0, "2021-10": 633.0, "2023-10": 1580.3165, "2024-10": 1107.0, "2025-10": 565.0, "2021-11": 622.0, "2023-11": 1622.0, "2024-11": 1043.0, "2025-11": 568.0, "2021-12": 647.0, "2023-12": 1160.0, "2024-12": 729.0, "2025-12": 571.0}}]}, {"id": "zanahoria", "nombre": "Zanahoria", "series": [{"label": "Zanahoria", "unidad_clp": "$/kg (s/IVA)", "nativa": "CLP", "meses": {"2021-01": 339.19, "2023-01": 454.54, "2024-01": 406.0, "2025-01": 428.0, "2026-01": 377.0, "2021-02": 319.85, "2023-02": 350.49, "2024-02": 380.0, "2025-02": 376.0, "2026-02": 369.0, "2021-03": 278.88, "2023-03": 303.98, "2024-03": 377.0, "2025-03": 328.0, "2026-03": 394.0, "2021-04": 271.16, "2023-04": 313.93, "2024-04": 347.0, "2025-04": 307.35, "2026-04": 352.01, "2021-05": 263.53, "2023-05": 293.0, "2024-05": 308.0, "2025-05": 304.78, "2026-05": 351.0, "2021-06": 262.32, "2023-06": 291.0, "2024-06": 306.0, "2025-06": 293.02, "2026-06": 344.14, "2021-07": 248.19, "2023-07": 260.0, "2024-07": 318.0, "2025-07": 281.96, "2026-07": 549.06, "2021-08": 255.1, "2023-08": 267.9, "2024-08": 399.0, "2025-08": 347.12, "2021-09": 286.27, "2023-09": 277.0, "2024-09": 524.0, "2025-09": 344.39, "2021-10": 371.0, "2023-10": 286.0, "2024-10": 530.0, "2025-10": 424.3, "2021-11": 355.8, "2023-11": 291.0, "2024-11": 506.0, "2025-11": 352.0, "2021-12": 344.5, "2023-12": 342.0, "2024-12": 433.0, "2025-12": 319.0}}]}, {"id": "ajo", "nombre": "Ajo", "series": [{"label": "Ajo", "unidad_clp": "$/kg (s/IVA)", "nativa": "CLP", "meses": {"2021-01": 1242.86, "2023-01": 1639.04, "2024-01": 2387.0, "2025-01": 2435.0, "2026-01": 1643.0, "2021-02": 1315.65, "2023-02": 1787.76, "2024-02": 2476.0, "2025-02": 2578.0, "2026-02": 1653.0, "2021-03": 1326.81, "2023-03": 1750.54, "2024-03": 2596.0, "2025-03": 2734.53, "2026-03": 1592.0, "2021-04": 1335.94, "2023-04": 1697.22, "2024-04": 2716.0, "2025-04": 2789.55, "2026-04": 1601.24, "2021-05": 1292.09, "2023-05": 1716.0, "2024-05": 2860.0, "2025-05": 2656.09, "2026-05": 1735.0, "2021-06": 1375.21, "2023-06": 1791.0, "2024-06": 2938.0, "2025-06": 2498.15, "2026-06": 1714.85, "2021-07": 1375.79, "2023-07": 1953.0, "2024-07": 2852.0, "2025-07": 2173.59, "2026-07": 1731.1, "2021-08": 1495.34, "2023-08": 2114.2, "2024-08": 2788.0, "2025-08": 1817.92, "2021-09": 1626.09, "2023-09": 2148.0, "2024-09": 2634.0, "2025-09": 1879.55, "2021-10": 1734.0, "2023-10": 2168.0, "2024-10": 2474.0, "2025-10": 1751.71, "2021-11": 1881.1, "2023-11": 2340.0, "2024-11": 2390.0, "2025-11": 1715.0, "2021-12": 1821.9, "2023-12": 2357.0, "2024-12": 2320.0, "2025-12": 1666.0}}]}, {"id": "cebolla", "nombre": "Cebolla", "series": [{"label": "Cebolla", "unidad_clp": "$/kg (s/IVA)", "nativa": "CLP", "meses": {"2021-01": 411.54, "2023-01": 498.81, "2024-01": 575.0, "2025-01": 352.0, "2026-01": 413.0, "2021-02": 397.04, "2023-02": 450.95, "2024-02": 504.0, "2025-02": 322.0, "2026-02": 383.0, "2021-03": 366.05, "2023-03": 460.83, "2024-03": 572.0, "2025-03": 337.03, "2026-03": 378.0, "2021-04": 338.12, "2023-04": 462.64, "2024-04": 630.0, "2025-04": 302.59, "2026-04": 389.88, "2021-05": 319.0, "2023-05": 475.0, "2024-05": 644.0, "2025-05": 286.41, "2026-05": 408.0, "2021-06": 305.8, "2023-06": 481.0, "2024-06": 654.0, "2025-06": 280.5, "2026-06": 408.7, "2021-07": 316.28, "2023-07": 521.0, "2024-07": 659.0, "2025-07": 261.99, "2026-07": 490.32, "2021-08": 305.18, "2023-08": 695.9, "2024-08": 599.0, "2025-08": 272.53, "2021-09": 287.93, "2023-09": 827.0, "2024-09": 521.0, "2025-09": 321.64, "2021-10": 271.0, "2023-10": 845.0, "2024-10": 400.0, "2025-10": 376.6, "2021-11": 278.6, "2023-11": 869.0, "2024-11": 303.0, "2025-11": 517.0, "2021-12": 237.9, "2023-12": 721.0, "2024-12": 278.0, "2025-12": 487.0}}]}], "internacional": [{"id": "trigo_intl", "nombre": "Trigo duro Red Winter", "sub": "EE.UU. · FOB Golfo", "series": [{"label": "Trigo duro Red Winter", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2021-01": 292.96, "2023-01": 381.17766300000005, "2024-01": 284.22, "2025-01": 233.82, "2026-01": 250.28, "2021-02": 292.26, "2023-02": 394.3501452631579, "2024-02": 279.06, "2025-02": 263.41, "2026-02": 259.49, "2021-03": 275.8, "2023-03": 370.36, "2024-03": 276.65, "2025-03": 254.68, "2026-03": 276.16, "2021-04": 287.09, "2023-04": 378.26497578947357, "2024-04": 269.35, "2025-04": 247.91, "2026-04": 283.75, "2021-05": 302.96, "2023-05": 371.78247272727276, "2024-05": 291.28, "2025-05": 225.61, "2026-05": 305.347233, "2021-06": 293.29, "2023-06": 262.0, "2024-06": 266.47, "2025-06": 241.83, "2026-06": 287.3687, "2021-07": 302.23, "2023-07": 326.0, "2024-07": 259.45, "2025-07": 235.8, "2026-07": 310.0692545454545, "2021-08": 331.1, "2023-08": 314.87, "2024-08": 254.03, "2025-08": 232.09, "2026-08": 281.03036, "2021-09": 344.98, "2023-09": 313.17, "2024-09": 273.97, "2025-09": 232.34, "2021-10": 361.02, "2023-10": 298.48, "2024-10": 275.52, "2025-10": 232.19, "2021-11": 385.1, "2023-11": 283.56, "2024-11": 249.6, "2025-11": 247.16, "2021-12": 382.08, "2023-12": 289.35, "2024-12": 254.0, "2025-12": 242.49}}]}, {"id": "avena_intl", "nombre": "Avena blanca", "sub": "EE.UU. · FOB Chicago", "series": [{"label": "Avena blanca No.2", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2021-01": 246.37, "2023-01": 252.52237492914983, "2024-01": 254.55, "2025-01": 238.07, "2026-01": 206.33, "2021-02": 244.17, "2023-02": 258.2230096291499, "2024-02": 259.4, "2025-02": 242.52, "2026-02": 215.39, "2021-03": 259.1, "2023-03": 243.36059512409793, "2024-03": 251.68, "2025-03": 250.88, "2026-03": 236.93, "2021-04": 265.68, "2023-04": 229.60741198593655, "2024-04": 243.1, "2025-04": 242.32, "2026-04": 230.38, "2021-05": 260.28, "2023-05": 224.85281892712558, "2024-05": 266.35, "2025-05": 251.32, "2026-05": 243.29057784412967, "2021-06": 261.62, "2023-06": 257.23, "2024-06": 226.55, "2025-06": 258.21, "2026-06": 209.63462463851937, "2021-07": 296.3, "2023-07": 274.0, "2024-07": 222.61, "2025-07": 256.65, "2026-07": 216.5542224972397, "2021-08": 334.44, "2023-08": 303.84, "2024-08": 224.7, "2025-08": 224.02, "2026-08": 223.89732464815884, "2021-09": 368.48, "2023-09": 312.21, "2024-09": 249.89, "2025-09": 211.29, "2021-10": 451.81, "2023-10": 275.39, "2024-10": 264.59, "2025-10": 203.78, "2021-11": 510.93, "2023-11": 246.76, "2024-11": 246.91, "2025-11": 208.97, "2021-12": 488.2, "2023-12": 259.16, "2024-12": 235.95, "2025-12": 202.09}}]}, {"id": "raps_intl", "nombre": "Raps Canola", "sub": "Canadá", "series": [{"label": "Raps Canola", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2021-01": 526.22, "2023-01": 620.5214461086105, "2024-01": 464.63, "2025-01": 427.24, "2026-01": 388.64, "2021-02": 583.647199362017, "2023-02": 618.5241622942859, "2024-02": 432.84, "2025-02": 439.28, "2026-02": 413.38, "2021-03": 630.25, "2023-03": 549.3304179553492, "2024-03": 455.78, "2025-03": 380.22, "2026-03": 452.91, "2021-04": 672.0993811948805, "2023-04": 567.2503894446903, "2024-04": 458.14, "2025-04": 421.36, "2026-04": 447.47, "2021-05": 457.79, "2023-05": 538.7730671848032, "2024-05": 477.84, "2025-05": 450.93, "2026-05": 465.42394696874624, "2021-06": 681.7409160612517, "2023-06": 532.89, "2024-06": 447.59, "2025-06": 454.34, "2026-06": 465.77613604511515, "2021-07": 709.43, "2023-07": 579.0, "2024-07": 460.05, "2025-07": 433.39, "2026-07": 484.8545385076564, "2021-08": 692.31, "2023-08": 588.97, "2024-08": 431.41, "2025-08": 409.26, "2026-08": 494.5402480535158, "2021-09": 692.31, "2023-09": 555.88, "2024-09": 430.33, "2025-09": 383.14, "2021-10": 752.95, "2023-10": 500.44, "2024-10": 452.05, "2025-10": 378.49, "2021-11": 388.3, "2023-11": 504.51, "2024-11": 440.75, "2025-11": 349.43, "2021-12": 795.8, "2023-12": 488.45, "2024-12": 425.53, "2025-12": 376.42}}]}, {"id": "maiz_intl", "nombre": "Maíz Amarillo", "sub": "Argentina · FOB Rosario", "series": [{"label": "Maíz Amarillo", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2021-01": 255.5, "2023-01": 310.72727272727275, "2024-01": 208.09, "2025-01": 224.55, "2026-01": 216.0, "2021-02": 247.83, "2023-02": 312.27777777777777, "2024-02": 190.42, "2025-02": 228.95, "2026-02": 210.78, "2021-03": 235.43, "2023-03": 298.6818181818182, "2024-03": 189.42, "2025-03": 217.0, "2026-03": 207.5, "2021-04": 256.5, "2023-04": 281.05555555555554, "2024-04": 194.5, "2025-04": 227.07, "2026-04": 211.25, "2021-05": 270.11, "2023-05": 253.1818181818182, "2024-05": 219.08, "2025-05": 205.25, "2026-05": 210.31578947368422, "2021-06": 248.57, "2023-06": 240.16, "2024-06": 192.82, "2025-06": 192.06, "2026-06": 197.05555555555554, "2021-07": 237.1, "2023-07": 228.38, "2024-07": 183.68, "2025-07": 197.36, "2026-07": 207.9047619047619, "2021-08": 237.9, "2023-08": 219.82, "2024-08": 185.18, "2025-08": 200.47, "2026-08": 214.65, "2021-09": 240.55, "2023-09": 236.81, "2024-09": 194.14, "2025-09": 200.05, "2021-10": 247.63, "2023-10": 245.0, "2024-10": 208.45, "2025-10": 202.28, "2021-11": 251.5, "2023-11": 213.29, "2024-11": 209.4, "2025-11": 208.44, "2021-12": 259.8, "2023-12": 216.79, "2024-12": 208.81, "2025-12": 216.53}}]}], "insumos": [{"id": "petroleo", "nombre": "Petróleo crudo", "series": [{"label": "Petróleo", "unidad_usd": "USD/barril", "nativa": "USD", "meses": {"2018-01": 66.23, "2018-02": 63.46, "2018-03": 64.17, "2018-04": 68.79, "2018-05": 73.43, "2018-06": 71.98, "2018-07": 72.67, "2018-08": 71.08, "2018-09": 75.36, "2018-10": 76.73, "2018-11": 62.32, "2018-12": 53.96, "2019-01": 56.58, "2019-02": 61.13, "2019-03": 63.79, "2019-04": 68.58, "2019-05": 66.83, "2019-06": 59.76, "2019-07": 61.48, "2019-08": 57.67, "2019-09": 60.04, "2019-10": 57.27, "2019-11": 60.4, "2019-12": 63.35, "2020-01": 61.63, "2020-02": 53.35, "2020-03": 32.2, "2020-04": 21.04, "2020-05": 30.38, "2020-06": 39.46, "2020-07": 42.07, "2020-08": 43.44, "2020-09": 40.6, "2020-10": 39.9, "2020-11": 42.3, "2020-12": 48.73, "2021-01": 53.6, "2021-02": 60.46, "2021-03": 63.83, "2021-04": 63.0, "2021-05": 66.4, "2021-06": 71.8, "2021-07": 73.28, "2021-08": 68.87, "2021-09": 72.8, "2021-10": 82.06, "2021-11": 79.92, "2021-12": 72.87, "2022-01": 83.92, "2022-02": 93.54, "2022-03": 112.4, "2022-04": 103.41, "2022-05": 110.1, "2022-06": 116.8, "2022-07": 105.08, "2022-08": 95.97, "2022-09": 88.22, "2022-10": 90.33, "2022-11": 87.38, "2022-12": 78.07, "2023-01": 80.41, "2023-02": 80.25, "2023-03": 76.47, "2023-04": 82.46, "2023-05": 74.12, "2023-06": 73.26, "2023-07": 78.98, "2023-08": 84.72, "2023-09": 92.22, "2023-10": 89.08, "2023-11": 81.35, "2023-12": 75.72, "2024-01": 77.67, "2024-02": 80.55, "2024-03": 83.55, "2024-04": 88.01, "2024-05": 81.45, "2024-06": 81.21, "2024-07": 83.26, "2024-08": 78.12, "2024-09": 72.42, "2024-10": 73.97, "2024-11": 72.29, "2024-12": 72.31, "2025-01": 78.16, "2025-02": 73.82, "2025-03": 70.7, "2025-04": 65.91, "2025-05": 62.75, "2025-06": 69.15, "2025-07": 69.19, "2025-08": 66.72, "2025-09": 66.46, "2025-10": 63.04, "2025-11": 62.34, "2025-12": 60.88, "2026-01": 63.65, "2026-02": 68.01, "2026-03": 95.58, "2026-04": 103.9, "2026-05": 100.4, "2026-06": 85.52, "2026-07": 79.54, "2026-08": 83.9}}]}, {"id": "urea", "nombre": "Urea", "series": [{"label": "Urea", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2018-01": 219.63, "2018-02": 232.5, "2018-03": 232.5, "2018-04": 230.63, "2018-05": 221.88, "2018-06": 224.0, "2018-07": 252.5, "2018-08": 260.0, "2018-09": 267.5, "2018-10": 270.0, "2018-11": 305.6, "2018-12": 276.67, "2019-01": 260.0, "2019-02": 250.63, "2019-03": 247.5, "2019-04": 247.5, "2019-05": 247.5, "2019-06": 247.5, "2019-07": 263.5, "2019-08": 262.5, "2019-09": 237.75, "2019-10": 237.0, "2019-11": 224.5, "2019-12": 217.5, "2020-01": 215.4, "2020-02": 214.38, "2020-03": 231.13, "2020-04": 235.0, "2020-05": 201.9, "2020-06": 202.0, "2020-07": 214.4, "2020-08": 249.5, "2020-09": 250.5, "2020-10": 245.0, "2020-11": 245.0, "2020-12": 245.0, "2021-01": 265.0, "2021-02": 335.0, "2021-03": 352.88, "2021-04": 328.1, "2021-05": 331.63, "2021-06": 393.25, "2021-07": 441.5, "2021-08": 446.88, "2021-09": 418.75, "2021-10": 612.5, "2021-11": 900.5, "2021-12": 890.0, "2022-01": 846.38, "2022-02": 744.17, "2022-03": 872.5, "2022-04": 925.0, "2022-05": 707.5, "2022-06": 690.0, "2022-07": 601.0, "2022-08": 591.25, "2022-09": 678.0, "2022-10": 636.25, "2022-11": 588.75, "2022-12": 519.38, "2023-01": 443.75, "2023-02": 357.5, "2023-03": 313.5, "2023-04": 313.38, "2023-05": 329.25, "2023-06": 287.5, "2023-07": 334.63, "2023-08": 385.63, "2023-09": 380.0, "2023-10": 411.38, "2023-11": 385.5, "2023-12": 354.0, "2024-01": 335.38, "2024-02": 351.25, "2024-03": 330.0, "2024-04": 320.0, "2024-05": 284.8, "2024-06": 336.25, "2024-07": 342.5, "2024-08": 342.5, "2024-09": 337.5, "2024-10": 374.75, "2024-11": 352.3, "2024-12": 352.0, "2025-01": 380.5, "2025-02": 436.5, "2025-03": 394.5, "2025-04": 386.88, "2025-05": 392.0, "2025-06": 420.5, "2025-07": 496.0, "2025-08": 507.7, "2025-09": 461.13, "2025-10": 394.4, "2025-11": 409.25, "2025-12": 392.5, "2026-01": 415.4, "2026-02": 472.0, "2026-03": 725.63, "2026-04": 856.9, "2026-05": 770.5, "2026-06": 475.67, "2026-07": 439.85, "2026-08": 390.0}}]}, {"id": "sft", "nombre": "Superfosfato triple", "series": [{"label": "SFT", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2018-01": 320.0, "2018-02": 320.0, "2018-03": 324.0, "2018-04": 325.0, "2018-05": 326.0, "2018-06": 335.0, "2018-07": 344.0, "2018-08": 358.0, "2018-09": 376.0, "2018-10": 385.0, "2018-11": 379.0, "2018-12": 368.0, "2019-01": 355.0, "2019-02": 344.0, "2019-03": 321.0, "2019-04": 310.0, "2019-05": 305.0, "2019-06": 294.0, "2019-07": 284.0, "2019-08": 275.0, "2019-09": 270.0, "2019-10": 270.0, "2019-11": 264.0, "2019-12": 243.33, "2020-01": 239.0, "2020-02": 245.0, "2020-03": 245.0, "2020-04": 245.0, "2020-05": 243.0, "2020-06": 240.0, "2020-07": 262.2, "2020-08": 276.25, "2020-09": 282.5, "2020-10": 290.0, "2020-11": 292.5, "2020-12": 320.0, "2021-01": 337.6, "2021-02": 453.75, "2021-03": 458.0, "2021-04": 478.0, "2021-05": 527.5, "2021-06": 550.0, "2021-07": 555.0, "2021-08": 555.0, "2021-09": 573.75, "2021-10": 618.0, "2021-11": 665.0, "2021-12": 686.67, "2022-01": 676.25, "2022-02": 687.5, "2022-03": 792.5, "2022-04": 856.0, "2022-05": 827.5, "2022-06": 746.5, "2022-07": 736.0, "2022-08": 703.75, "2022-09": 708.0, "2022-10": 675.0, "2022-11": 625.0, "2022-12": 584.38, "2023-01": 569.38, "2023-02": 547.5, "2023-03": 537.5, "2023-04": 550.0, "2023-05": 485.63, "2023-06": 390.0, "2023-07": 392.25, "2023-08": 450.63, "2023-09": 461.5, "2023-10": 468.13, "2023-11": 462.63, "2023-12": 447.5, "2024-01": 450.63, "2024-02": 454.38, "2024-03": 449.0, "2024-04": 442.5, "2024-05": 434.9, "2024-06": 473.75, "2024-07": 505.75, "2024-08": 507.2, "2024-09": 504.38, "2024-10": 503.75, "2024-11": 491.0, "2024-12": 477.5, "2025-01": 478.0, "2025-02": 480.63, "2025-03": 478.5, "2025-04": 496.0, "2025-05": 541.5, "2025-06": 641.25, "2025-07": 655.0, "2025-08": 662.9, "2025-09": 664.38, "2025-10": 658.5, "2025-11": 636.25, "2025-12": 538.5, "2026-01": 529.2, "2026-02": 536.25, "2026-03": 558.13, "2026-04": 658.1, "2026-05": 713.5, "2026-06": 735.6, "2026-07": 719.5, "2026-08": 704.4}}]}, {"id": "dap", "nombre": "Fosfato diamónico", "series": [{"label": "DAP", "unidad_usd": "USD/ton", "nativa": "USD", "meses": {"2018-01": 360.38, "2018-02": 370.0, "2018-03": 378.0, "2018-04": 384.75, "2018-05": 384.38, "2018-06": 391.6, "2018-07": 400.75, "2018-08": 409.0, "2018-09": 421.63, "2018-10": 420.75, "2018-11": 410.2, "2018-12": 389.67, "2019-01": 382.13, "2019-02": 357.38, "2019-03": 335.03, "2019-04": 323.75, "2019-05": 313.4, "2019-06": 314.88, "2019-07": 307.5, "2019-08": 292.9, "2019-09": 285.75, "2019-10": 277.38, "2019-11": 248.0, "2019-12": 238.16, "2020-01": 264.9, "2020-02": 279.38, "2020-03": 276.22, "2020-04": 282.0, "2020-05": 263.0, "2020-06": 273.0, "2020-07": 305.1, "2020-08": 341.88, "2020-09": 358.38, "2020-10": 357.1, "2020-11": 359.63, "2020-12": 388.5, "2021-01": 421.3, "2021-02": 528.88, "2021-03": 534.13, "2021-04": 543.4, "2021-05": 574.63, "2021-06": 604.75, "2021-07": 613.0, "2021-08": 603.13, "2021-09": 643.75, "2021-10": 672.9, "2021-11": 726.69, "2021-12": 745.0, "2022-01": 699.38, "2022-02": 747.13, "2022-03": 938.13, "2022-04": 954.0, "2022-05": 842.5, "2022-06": 783.75, "2022-07": 784.0, "2022-08": 749.38, "2022-09": 752.0, "2022-10": 725.0, "2022-11": 665.63, "2022-12": 625.0, "2023-01": 631.0, "2023-02": 612.5, "2023-03": 606.0, "2023-04": 637.0, "2023-05": 510.0, "2023-06": 454.55, "2023-07": 458.75, "2023-08": 528.75, "2023-09": 527.9, "2023-10": 534.75, "2023-11": 535.63, "2023-12": 563.75, "2024-01": 596.25, "2024-02": 583.81, "2024-03": 617.5, "2024-04": 545.0, "2024-05": 522.0, "2024-06": 543.0, "2024-07": 539.4, "2024-08": 546.0, "2024-09": 554.75, "2024-10": 573.44, "2024-11": 574.5, "2024-12": 568.33, "2025-01": 582.7, "2025-02": 603.75, "2025-03": 615.13, "2025-04": 635.0, "2025-05": 669.2, "2025-06": 715.38, "2025-07": 736.0, "2025-08": 795.1, "2025-09": 780.63, "2025-10": 754.0, "2025-11": 708.25, "2025-12": 627.5, "2026-01": 619.2, "2026-02": 626.5, "2026-03": 658.25, "2026-04": 725.3, "2026-05": 769.5, "2026-06": 783.8, "2026-07": 781.3, "2026-08": 793.5}}]}, {"id": "tc", "nombre": "Valor USD a CLP", "esTC": true, "series": [{"label": "TC USD", "unidad_clp": "$/USD", "nativa": "CLP", "meses": {"2020-01": 746.66, "2020-02": 788.18, "2020-03": 811.1, "2020-04": 835.23, "2020-05": 850.41, "2020-06": 816.47, "2020-07": 813.25, "2020-08": 759.18, "2020-09": 784.27, "2020-10": 784.19, "2020-11": 775.56, "2020-12": 766.0, "2021-01": 710.64, "2021-02": 736.88, "2021-03": 703.65, "2021-04": 736.17, "2021-05": 700.15, "2021-06": 730.43, "2021-07": 732.25, "2021-08": 767.29, "2021-09": 784.39, "2021-10": 798.63, "2021-11": 804.32, "2021-12": 829.94, "2022-01": 855.94, "2022-02": 799.15, "2022-03": 807.26, "2022-04": 777.1, "2022-05": 847.44, "2022-06": 822.25, "2022-07": 905.32, "2022-08": 920.49, "2022-09": 890.9, "2022-10": 971.14, "2022-11": 953.0, "2022-12": 916.36, "2023-01": 856.76, "2023-02": 803.14, "2023-03": 818.67, "2023-04": 792.18, "2023-05": 802.14, "2023-06": 800.89, "2023-07": 826.01, "2023-08": 857.59, "2023-09": 904.62, "2023-10": 904.62, "2023-11": 928.28, "2023-12": 884.67, "2024-01": 932.66, "2024-02": 980.19, "2024-03": 982.38, "2024-04": 943.62, "2024-05": 917.98, "2024-06": 947.78, "2024-07": 948.79, "2024-08": 912.08, "2024-09": 900.01, "2024-10": 950.89, "2024-11": 975.41, "2024-12": 992.12, "2025-01": 990.12, "2025-02": 990.07, "2025-03": 941.76, "2025-04": 931.75, "2025-05": 937.37, "2025-06": 940.21, "2025-07": 930.67, "2025-08": 970.09, "2025-09": 968.64, "2025-10": 958.9, "2025-11": 941.63, "2025-12": 930.89, "2026-01": 883.97, "2026-02": 862.02, "2026-03": 909.89, "2026-04": 897.89, "2026-05": 897.64, "2026-06": 903.38, "2026-07": 930.97, "2026-08": 917.66}}]}, {"id": "tc_eur", "nombre": "Valor EUR a CLP", "esTC": true, "series": [{"label": "TC EUR", "unidad_clp": "$/EUR", "nativa": "CLP", "meses": {"2023-01": 886.236, "2023-02": 856.221, "2023-03": 864.37, "2023-04": 883.018, "2023-05": 866.97, "2023-06": 866.514, "2023-07": 901.269, "2023-08": 933.96, "2023-09": 945.631, "2023-10": 979.063, "2023-11": 956.182, "2023-12": 955.531, "2024-01": 991.299, "2024-02": 1041.205, "2024-03": 1051.632, "2024-04": 1026.934, "2024-05": 989.917, "2024-06": 998.223, "2024-07": 1014.449, "2024-08": 1022.949, "2024-09": 1028.438, "2024-10": 1021.823, "2024-11": 1032.212, "2024-12": 1028.499, "2025-01": 1033.862, "2025-02": 993.273, "2025-03": 1007.567, "2025-04": 1078.888, "2025-05": 1061.662, "2025-06": 1081.293, "2025-07": 1113.625, "2025-08": 1124.737, "2025-09": 1126.735, "2025-10": 1108.605, "2025-11": 1080.785, "2025-12": 1071.039, "2026-01": 1037.0319047619048, "2026-02": 1019.5824999999999, "2026-03": 1052.9109090909094, "2026-04": 1049.8333333333337, "2026-05": 1048.5757894736844, "2026-06": 1041.1457142857143, "2026-07": 1064.17, "2026-08": 1065.109}}]}, {"id": "mo", "nombre": "Costo mano de obra", "fuente": "INE", "series": [{"label": "Costo laboral medio", "unidad_clp": "$/hora", "nativa": "CLP", "meses": {"2023-01": 7165.0, "2024-01": 7697.0, "2025-01": 7788.0, "2026-01": 8272.0, "2023-02": 7174.0, "2024-02": 7700.0, "2025-02": 7775.0, "2026-02": 8281.0, "2023-03": 7291.0, "2024-03": 7772.0, "2025-03": 7813.0, "2026-03": 8333.0, "2023-04": 7328.0, "2024-04": 7194.0, "2025-04": 7901.0, "2026-04": 8416.0, "2023-05": 7377.0, "2024-05": 7263.0, "2025-05": 7934.0, "2026-05": 8557.0, "2023-06": 7422.0, "2024-06": 7304.0, "2025-06": 7955.0, "2026-06": 8633.0, "2023-07": 7478.0, "2024-07": 7522.0, "2025-07": 8005.0, "2026-07": 8743.0, "2023-08": 7478.0, "2024-08": 7535.0, "2025-08": 8059.0, "2026-08": 9000.0, "2023-09": 7580.0, "2024-09": 7629.0, "2025-09": 8127.0, "2023-10": 7579.0, "2024-10": 7586.0, "2025-10": 8104.0, "2023-11": 7591.0, "2024-11": 7614.0, "2025-11": 8120.0, "2023-12": 7680.0, "2024-12": 7693.0, "2025-12": 8235.0}}]}], "precip": [{"nombre": "Pudahuel, Santiago", "normal": [0.4, 1.1, 3.3, 7.2, 41.0, 56.1, 80.6, 37.6, 15.7, 10.0, 7.9, 0.7], "y": {"2024": [0.0, 1.0, 0.0, 0.1, 104.8, 140.3, 0.0, 68.7, 6.3, 5.8, 0.0, 0.0], "2025": [0.0, 0.0, 7.6, 0.0, 43.8, 63.2, 25.2, 32.8, 13.9, 1.6, 0.6, 0.0], "2026": [2.8, 0.0, 3.5, 5.9, 2.6, 0.1, 135.0, 33.01, null, null, null, null]}, "temp": {"2024": [22.5, 22.9, 21.0, 15.9, 9.0, 9.7, 8.2, 9.5, 15.8, 16.5, 18.6, 20.4], "2025": [22.9, 22.8, 19.3, 15.4, 12.4, 8.3, 9.7, 10.5, 12.9, 16.8, 18.2, 21.3], "2026": [22.4, 22.6, 19.9, 16.4, 11.3, 9.3, 10.4, 11.1, null, null, null, null]}}, {"nombre": "General Freire, Curicó Ad", "normal": [3.8, 0.7, 15.0, 32.2, 109.8, 148.6, 166.1, 98.3, 56.6, 35.7, 23.3, 11.1], "y": {"2024": [0.0, 6.2, 0.0, 45.8, 70.8, 292.8, 0.8, 106.6, 57.2, 9.2, 0.0, 0.0], "2025": [0.0, 0.0, 24.3, 18.8, 96.0, 122.6, 58.4, 75.2, 79.6, 16.4, 0.0, 0.0], "2026": [0.0, 0.0, 95.0, 18.2, 18.2, 10.8, 260.8, 115.8, null, null, null, null]}, "temp": null}, {"nombre": "G. Bernardo O'Higgins, Chillán", "normal": [17.6, 15.4, 25.7, 54.0, 193.4, 211.9, 220.6, 135.9, 94.6, 69.2, 40.3, 28.4], "y": {"2024": [0.0, 0.0, 23.6, 47.0, 105.5, 387.7, 23.8, 102.6, 50.0, 27.1, 5.4, 0.0], "2025": [0.0, 0.0, 58.2, 44.0, 79.8, 117.4, 72.9, 59.4, 66.9, 24.4, 0.0, 0.0], "2026": [0.6, 0.0, 100.9, 25.6, 16.2, 32.6, 314.0, 189.4, null, null, null, null]}, "temp": {"2024": [21.1, 20.7, 17.4, 12.3, 6.8, 8.9, 4.9, 7.6, 10.1, 14.4, 15.6, 18.8], "2025": [21.6, 20.4, 17.4, 12.2, 9.5, 6.4, 8.3, 9.8, 10.8, 13.3, 16.5, 19.6], "2026": [21.4, 0.0, 13.9, 12.4, 8.7, 8.2, 8.8, 8.7, null, null, null, null]}}, {"nombre": "La Serena", "normal": [0.2, 0.1, 1.1, 0.8, 13.1, 29.9, 17.1, 12.7, 4.2, 3.3, 0.4, 0.3], "y": {"2024": [0.0, 0.6, 0.6, 0.2, 12.6, 43.0, 2.8, 25.8, 0.0, 2.8, 0.0, 0.6], "2025": [0.2, 0.0, 0.4, 0.0, 0.2, 27.4, 34.6, 22.8, 0.4, 1.8, 0.0, 0.0], "2026": [0.8, 0.0, 0.2, 0.2, 0.0, 0.4, 200.2, 18.0, null, null, null, null]}, "temp": null}, {"nombre": "Maquehue, Temuco", "normal": [42.4, 40.8, 45.9, 80.1, 175.9, 177.0, 168.8, 134.7, 94.1, 85.7, 59.1, 52.9], "y": {"2024": [2.5, 6.7, 73.9, 114.3, 116.1, 305.7, 44.3, 74.7, 147.1, 24.2, 59.4, 5.6], "2025": [14.4, 7.6, 59.3, 141.0, 96.7, 125.6, 90.4, 83.4, 96.1, 46.5, 17.8, 23.5], "2026": [8.4, 39.9, 164.0, 67.0, 42.5, 138.0, 204.2, 211.7, null, null, null, null]}, "temp": {"2024": [16.7, 17.3, 13.9, 11.1, 6.6, 8.6, 4.9, 6.8, 8.3, 11.3, 12.6, 14.5], "2025": [16.6, 16.1, 14.8, 11.5, 8.6, 6.1, 7.1, 9.2, 10.1, 11.0, 14.2, 16.0], "2026": [17.9, 16.0, 14.0, 10.6, 8.3, 7.6, 8.4, 8.6, null, null, null, null]}}, {"nombre": "Pichoy, Valdivia", "normal": [54.1, 54.6, 70.5, 133.0, 294.6, 297.1, 312.3, 247.0, 162.4, 109.2, 73.0, 63.2], "y": {"2024": [0.2, 26.0, 96.8, 154.6, 157.8, 352.2, 81.6, 89.2, 200.0, 27.2, 85.0, 9.4], "2025": [27.0, 34.4, 83.2, 154.2, 145.2, 154.6, 207.6, 106.6, 137.1, 62.0, 13.4, 34.0], "2026": [14.0, 63.3, 196.9, 101.4, 104.0, 142.8, 683.3, 236.8, null, null, null, null]}, "temp": {"2024": [17.8, 17.0, 13.8, 11.3, 6.2, 8.7, 5.1, 6.7, 8.2, 11.5, 12.8, 15.0], "2025": [17.1, 15.3, 13.8, 11.2, 9.1, 6.7, 7.0, 9.0, 9.8, 10.9, 14.2, 16.1], "2026": [17.8, 15.6, 13.0, 10.3, 7.9, 7.4, 7.0, 7.8, null, null, null, null]}}, {"nombre": "Cañal bajo, Osorno", "normal": [48.7, 60.5, 53.2, 105.2, 199.6, 189.8, 197.8, 173.0, 104.6, 80.3, 58.7, 60.4], "y": {"2024": [9.0, 9.8, 99.8, 30.8, 41.4, 166.9, 73.0, 58.0, 136.6, 22.6, 87.6, 7.8], "2025": [17.4, 8.8, 48.7, 47.8, 84.4, 46.8, 140.4, 71.8, 147.1, 71.2, 12.4, 51.0], "2026": [14.8, 29.4, 152.6, 67.4, 74.9, 96.9, 330.2, 162.8, null, null, null, null]}, "temp": {"2024": [16.8, 16.5, 13.2, 11.2, 5.2, 8.0, 4.7, 6.8, 8.0, 11.2, 12.3, 14.5], "2025": [16.4, 15.7, 13.8, 10.0, 6.7, 6.4, 7.3, 9.1, 9.7, 11.0, 14.4, 15.8], "2026": [18.1, 15.8, 13.2, 10.4, 8.7, 7.4, 7.1, 8.0, null, null, null, null]}}, {"nombre": "El Tepual, Puerto Montt", "normal": [90.1, 93.3, 98.9, 143.3, 234.1, 223.8, 228.7, 208.5, 145.9, 120.9, 111.9, 103.1], "y": {"2024": [37.0, 29.8, 111.2, 137.8, 146.4, 193.6, 88.4, 85.4, 158.8, 32.8, 152.2, 29.2], "2025": [41.2, 42.6, 76.0, 132.8, 206.0, 182.4, 125.6, 151.5, 105.8, 155.3, 47.6, 65.4], "2026": [37.2, 77.6, 211.6, 111.0, 64.2, 117.8, 187.8, 160.4, null, null, null, null]}, "temp": {"2024": [15.2, 14.9, 12.5, 9.9, 5.9, 8.0, 4.8, 6.6, 7.4, 9.8, 11.2, 12.9], "2025": [14.8, 14.2, 12.6, 10.5, 8.8, 6.4, 7.6, 8.6, 9.3, 10.4, 13.0, 13.9], "2026": [16.1, 14.0, 12.6, 9.8, 8.6, 7.5, 6.2, 7.1, null, null, null, null]}}]};
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const state={prod:"CLP", intl:"USD", ins:"USD"};   // toggles independientes por sección
+
+function sym(cur){ return cur==="USD"?"US$":cur==="EUR"?"€":"$"; }
+function medida(u){ return u.replace(/^USD/,'').replace(/^US\$/,'').replace(/^€/,'').replace(/^\$/,''); }
+function unitLabel(s,cur){ const u=s.unidad_clp||s.unidad_usd||""; return sym(cur)+medida(u); }
+// Conversión pivotando por CLP: soporta CLP/USD/EUR con los tipos de cambio del Excel.
+function convert(meses,nativa,cur){
+  const o={};
+  for(const k in meses){ const v=meses[k];
+    if(v==null){ o[k]=null; continue; }
+    if(cur===nativa){ o[k]=v; continue; }
+    const clp = (nativa==="CLP") ? v : (DATA.tc[k] ? v*DATA.tc[k] : null);
+    if(clp==null){ o[k]=null; continue; }
+    if(cur==="CLP") o[k]=clp;
+    else if(cur==="USD") o[k]= DATA.tc[k] ? clp/DATA.tc[k] : null;
+    else if(cur==="EUR") o[k]= DATA.tc_eur[k] ? clp/DATA.tc_eur[k] : null;
+    else o[k]=null;
+  } return o;
+}
+function fmt(v,cur){
+  if(v==null||isNaN(v)) return "No disp.";
+  if(cur==="CLP") return "$"+Math.round(v).toLocaleString("es-CL");
+  return sym(cur)+v.toLocaleString("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtNum(v,cur){
+  if(v==null||isNaN(v)) return null;
+  if(cur==="CLP") return "$"+Math.round(v).toLocaleString("es-CL");
+  return "$"+v.toLocaleString("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function valHTML(v,cur){
+  const n=fmtNum(v,cur);
+  return n==null ? '<span class="k-na">No disp.</span>' : n+'<span class="cc">'+cur+'</span>';
+}
+function mesLabel(k){ const [y,m]=k.split("-"); return MES[+m-1]+" "+y; }
+function mesLabelFull(k){ const [y,m]=k.split("-"); return MESL[+m-1]+" "+y; }
+function kpis(cm){
+  const ks=Object.keys(cm).filter(k=>cm[k]!=null).sort();
+  if(!ks.length) return null;
+  const target=DATA.meta.ultimo_mes;
+  const mesAk=(cm[target]!=null)?target:ks[ks.length-1];
+  const last3=ks.slice(-3);
+  const y=String(DATA.meta.anio_anterior);
+  const yk=ks.filter(k=>k.startsWith(y));
+  const avg=a=>a.reduce((s,x)=>s+cm[x],0)/a.length;
+  return {mesA:{k:mesAk,v:cm[mesAk]}, tri:{v:avg(last3),ks:last3}, anio:{v:yk.length?avg(yk):null,n:yk.length,months:yk,parcial:yk.length>0&&yk.length<12}};
+}
+
+// ---------- cards ----------
+function cardHTML(item, mode){
+  const s0=item.series[0];
+  const c0 = item.esTC ? "CLP" : mode;
+  const conv0 = item.esTC ? s0.meses : convert(s0.meses,s0.nativa,c0);
+  const K0 = kpis(conv0);
+  // Variación vs PROMEDIO del año anterior: % en el globo (esquina), diferencia $/US$ en línea aparte
+  let badge="", varline="";
+  if(!item.esTC && K0){
+    if(K0.anio.v!=null){
+      const curV=K0.mesA.v, base=K0.anio.v;
+      const diff=curV-base, pct=(curV/base-1)*100;
+      const cls=pct>=0?"up":"down", ar=pct>=0?"▲":"▼", sg=pct>=0?"+":"−";
+      badge=`<span class="badge ${cls}" title="${mesLabelFull(K0.mesA.k)} vs promedio del año ${DATA.meta.anio_anterior}">${ar} ${sg}${Math.abs(pct).toFixed(1)}%</span>`;
+      varline=`<div class="var-line ${cls}">${sg}${fmt(Math.abs(diff),c0)} <span>vs prom. ${DATA.meta.anio_anterior}</span></div>`;
+    } else {
+      badge=`<span class="badge na">s/ref</span>`;
+      varline=`<div class="var-line na"><span>sin prom. ${DATA.meta.anio_anterior}</span></div>`;
+    }
+  }
+  let body="";
+  item.series.forEach((s)=>{
+    const c = item.esTC ? "CLP" : mode;
+    const conv = item.esTC ? s.meses : convert(s.meses,s.nativa,c);
+    const K=kpis(conv);
+    const unit=unitLabel(s,c);
+    if(!K){ body+=`<div class="serie-lbl">${unit}</div><div class="na-block">No disponible</div>`; return; }
+    const anioSub = K.anio.parcial
+      ? `<div class="flag">parcial · ${K.anio.months.map(k=>MES[+k.split("-")[1]-1]).join("-")}</div>`
+      : `<div class="k-sub">promedio</div>`;
+    const triSub=`prom. ${MES[+K.tri.ks[0].split("-")[1]-1]}–${MES[+K.tri.ks[2].split("-")[1]-1]}`;
+    body+=`
+      <div class="serie-lbl">${unit}</div>
+      <div class="kpi-main">
+        <div class="k-lab">${mesLabelFull(K.mesA.k)}</div>
+        <div class="k-val">${valHTML(K.mesA.v,c)}</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="k-lab">Trimestre</div><div class="k-val">${valHTML(K.tri.v,c)}</div><div class="k-sub">${triSub}</div></div>
+        <div class="kpi ${K.anio.v==null?'na':''}"><div class="k-lab">Año ${DATA.meta.anio_anterior}</div><div class="k-val">${valHTML(K.anio.v,c)}</div>${anioSub}</div>
+      </div>`;
+  });
+  return `<div class="card"><div class="bar"></div><div class="body">
+      <div class="c-title"><div class="name-wrap"><span class="name">${item.nombre}</span>${item.sub?`<div class="src-note">${item.sub}</div>`:(item.fuente?`<div class="src-note">Fuente: ${item.fuente}</div>`:"")}</div>${badge}</div>
+      ${varline}
+      ${body}
+    </div></div>`;
+}
+function renderProd(){ document.getElementById("grid-prod").innerHTML=DATA.productos.map(i=>cardHTML(i,state.prod)).join(""); }
+function renderIntl(){ document.getElementById("grid-intl").innerHTML=DATA.internacional.map(i=>cardHTML(i,state.intl)).join(""); }
+function renderIns(){ document.getElementById("grid-ins").innerHTML=DATA.insumos.map(i=>cardHTML(i,state.ins)).join(""); }
+
+// ---------- chart factory ----------
+function monthAxis(){
+  const [sy,sm]=[2023,1], [ey,em]=DATA.meta.ultimo_mes.split("-").map(Number);
+  const out=[]; let y=sy,m=sm;
+  while(y<ey||(y===ey&&m<=em)){ out.push(`${y}-${String(m).padStart(2,"0")}`); m++; if(m>12){m=1;y++;} }
+  return out;
+}
+function seriesFromGroup(group, getMode){
+  const arr=[];
+  group.forEach(it=>it.series.forEach(s=>arr.push({nombre: it.series.length>1?it.nombre+" · "+s.label:it.nombre, serie:s, esTC:!!it.esTC, mode:getMode})));
+  return arr;
+}
+function makeChart(pfx, list){
+  const st={sel:0, range:"all"};
+  const sel=document.getElementById("sel-"+pfx);
+  sel.innerHTML=list.map((c,i)=>`<option value="${i}">${c.nombre}</option>`).join("");
+  sel.onchange=e=>{ st.sel=+e.target.value; draw(); };
+  document.querySelectorAll("#rng-"+pfx+" button").forEach(b=>b.onclick=()=>{
+    st.range=b.dataset.r; document.querySelectorAll("#rng-"+pfx+" button").forEach(x=>x.classList.toggle("on",x===b)); draw();
+  });
+  function draw(){
+    const cs=list[st.sel]; if(!cs) return;
+    const s=cs.serie;
+    const cur = cs.esTC ? "CLP" : cs.mode();
+    const med = medida(s.unidad_clp||s.unidad_usd||"");
+    document.getElementById("cur-"+pfx).textContent = cur+" · "+unitLabel(s,cur);
+    const conv = cs.esTC ? s.meses : convert(s.meses,s.nativa,cur);
+    let axis=monthAxis();
+    if(st.range==="24") axis=axis.slice(-24);
+    if(st.range==="12") axis=axis.slice(-12);
+    const pts=axis.map(k=>({k, v:conv[k]!=null?conv[k]:null}));
+    const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
+    const svg=document.getElementById("svg-"+pfx);
+    const W=svg.clientWidth||900, H=320, padL=64,padR=14,padT=16,padB=34;
+    if(!vals.length){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#6E7377">Sin datos</text>`; return; }
+    let mn=Math.min(...vals), mx=Math.max(...vals);
+    if(mn===mx){ mn*=0.95; mx*=1.05; }
+    const rng=mx-mn; mn-=rng*0.08; mx+=rng*0.08;
+    const X=i=>padL+(W-padL-padR)*(pts.length<=1?0.5:i/(pts.length-1));
+    const Y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
+    let g=""; const NG=4;
+    for(let i=0;i<=NG;i++){ const val=mn+(mx-mn)*i/NG, yy=Y(val);
+      g+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#ECE8DF"/>`;
+      g+=`<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#96938B">${fmt(val,cur).replace('US$','').replace('€','').replace('$','')}</text>`;
+    }
+    pts.forEach((p,i)=>{ const [yy,mm]=p.k.split("-");
+      if(mm==="01"||pts.length<=12){
+        g+=`<text x="${X(i)}" y="${H-12}" text-anchor="middle" font-size="11" fill="#96938B">${pts.length<=12?MES[+mm-1]:yy}</text>`;
+        g+=`<line x1="${X(i)}" y1="${padT}" x2="${X(i)}" y2="${H-padB}" stroke="#F1EDE4"/>`;
+      }
+    });
+    let d="",open=false;
+    pts.forEach((p,i)=>{ if(p.v==null){open=false;return;} d+=(open?"L":"M")+X(i)+" "+Y(p.v)+" "; open=true; });
+    let area=""; const segs=[]; let c2=[];
+    pts.forEach((p,i)=>{ if(p.v==null){ if(c2.length){segs.push(c2);c2=[];} } else c2.push([i,p.v]); });
+    if(c2.length)segs.push(c2);
+    segs.forEach(seg=>{ let a="M"+X(seg[0][0])+" "+Y(seg[0][1])+" ";
+      seg.forEach(([i,v])=>a+="L"+X(i)+" "+Y(v)+" ");
+      a+="L"+X(seg[seg.length-1][0])+" "+Y(mn)+" L"+X(seg[0][0])+" "+Y(mn)+" Z"; area+=`<path d="${a}" fill="url(#grad-${pfx})"/>`;
+    });
+    let dots="";
+    pts.forEach((p,i)=>{ if(p.v!=null) dots+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="2.6" fill="#0E2841"/>`; });
+    svg.innerHTML=`<defs><linearGradient id="grad-${pfx}" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="#0E2841" stop-opacity=".16"/><stop offset="1" stop-color="#0E2841" stop-opacity="0"/></linearGradient></defs>
+      ${g}${area}<path d="${d}" fill="none" stroke="#0E2841" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <line class="guide" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="#0E2841" stroke-dasharray="3 3" opacity="0"/>
+      <circle class="hl" r="5" fill="#fff" stroke="#0E2841" stroke-width="2.4" opacity="0"/>${dots}`;
+    const tt=document.getElementById("tt-"+pfx), guide=svg.querySelector(".guide"), hl=svg.querySelector(".hl");
+    svg.onmousemove=(e)=>{
+      const r=svg.getBoundingClientRect(); const mx2=(e.clientX-r.left)*(W/r.width);
+      let bi=-1,bd=1e9; pts.forEach((p,i)=>{ if(p.v==null)return; const dx=Math.abs(X(i)-mx2); if(dx<bd){bd=dx;bi=i;} });
+      if(bi<0){tt.style.opacity=0;guide.setAttribute("opacity",0);hl.setAttribute("opacity",0);return;}
+      const px=X(bi),py=Y(pts[bi].v);
+      guide.setAttribute("x1",px);guide.setAttribute("x2",px);guide.setAttribute("opacity",.5);
+      hl.setAttribute("cx",px);hl.setAttribute("cy",py);hl.setAttribute("opacity",1);
+      tt.style.opacity=1; tt.style.left=(px*(r.width/W))+"px"; tt.style.top=(py*(r.height/H))+"px";
+      const [yy,mm]=pts[bi].k.split("-"); tt.innerHTML=`${MESL[+mm-1]} ${yy}<br><b>${fmt(pts[bi].v,cur)}</b> <span style="font-weight:600;opacity:.85">${med}</span>`;
+    };
+    svg.onmouseleave=()=>{tt.style.opacity=0;guide.setAttribute("opacity",0);hl.setAttribute("opacity",0);};
+  }
+  return {draw};
+}
+
+// ---------- meteorología por estación (3 vistas: precip mensual / precip acumulada / temperatura) ----------
+function initPrecip(){
+  const st0=DATA.precip; if(!st0||!st0.length) return;
+  const NORMP=DATA.meta.normal_periodo||""; const YRS=["2024","2025","2026"]; const NAVY="#0E2841", RED="#FF1E01";
+  const sel=document.getElementById("sel-pp"); let view="mensual";
+  sel.innerHTML=st0.map((s,i)=>`<option value="${i}">${s.nombre}</option>`).join("");
+  sel.onchange=drawPP;
+  document.querySelectorAll("#view-pp button").forEach(b=>b.onclick=()=>{view=b.dataset.v;
+    document.querySelectorAll("#view-pp button").forEach(x=>x.classList.toggle("on",x===b)); drawPP();});
+  window.addEventListener("resize",drawPP);
+  function accA(a){const o=[];let r=0;for(let i=0;i<12;i++){r+=(a[i]==null?0:a[i]);o.push(r);}return o;}
+  function lastData(a){let l=-1;for(let i=0;i<12;i++)if(a[i]!=null)l=i;return l;}
+  function drawPP(){
+    const st=st0[+sel.value], isTemp=view==="temp", men=view==="mensual", hasT=!!st.temp;
+    const accN=accA(st.normal);
+    const last2026=isTemp?(hasT?Math.max(lastData(st.temp["2026"]),0):0):Math.max(lastData(st.y["2026"]),0);
+    const axis=[],val=[],normal=[],yr=[];
+    YRS.forEach(y=>{const acc=accA(st.y[y]);const up=(y==="2026")?last2026:11;
+      for(let m=0;m<=up;m++){axis.push(y+"-"+String(m+1).padStart(2,"0"));yr.push(y);
+        if(isTemp){val.push(hasT?st.temp[y][m]:null);normal.push(null);}
+        else if(men){val.push(st.y[y][m]);normal.push(st.normal[m]);}
+        else {val.push(acc[m]);normal.push(accN[m]);}}});
+    const lg=document.getElementById("pp-legend"), b=document.getElementById("pp-badge"), bs=document.getElementById("pp-badgesub");
+    const unit=isTemp?"°C":"mm";
+    lg.innerHTML = isTemp ? '<span><span class="pp-sq"></span> Temperatura media (°C)</span>'
+      : men ? '<span><span class="pp-sq"></span> Precipitación del mes</span><span><span class="pp-lnr"></span> Normal'+(NORMP?" ("+NORMP+")":"")+'</span>'
+      : '<span><span class="pp-sq"></span> Acumulado del año</span><span><span class="pp-lnr dash"></span> Normal acumulada'+(NORMP?" ("+NORMP+")":"")+'</span>';
+    function setPrecip(rv,nv,label){ if(rv!=null&&nv){const p=(rv/nv-1)*100,cls=p>=0?"up":"down";
+        b.className="badge "+cls;b.textContent=(p>=0?"▲ +":"▼ −")+Math.abs(p).toFixed(1)+"%";
+        bs.textContent=label+" ("+Math.round(rv)+" vs "+Math.round(nv)+" mm)";}
+      else{b.className="badge na";b.textContent="s/ref";bs.textContent=label+" · sin dato";}}
+    function setTempVar(y,m){ const cur=hasT?st.temp[y][m]:null, py=(+y-1)+"";
+      const prev=(hasT&&st.temp[py])?st.temp[py][m]:null;
+      if(cur!=null&&prev!=null){const d=cur-prev,cls=d>=0?"up":"down";
+        b.className="badge "+cls;b.textContent=(d>=0?"▲ +":"▼ −")+Math.abs(d).toFixed(1)+" °C";
+        bs.textContent=MES[m]+" "+y+" vs "+MES[m]+" "+py+" ("+cur.toFixed(1)+" vs "+prev.toFixed(1)+" °C)";}
+      else{b.className="badge na";b.textContent=cur!=null?cur.toFixed(1)+" °C":"s/dato";bs.textContent=cur!=null?("sin "+MES[m]+" "+py+" para comparar"):"sin dato";}}
+    function badgeDefault(){ if(isTemp) setTempVar("2026",last2026);
+      else{const dR=men?st.y["2026"][last2026]:accA(st.y["2026"])[last2026], dN=men?st.normal[last2026]:accN[last2026];
+        setPrecip(dR,dN,(men?"":"acum. ")+MES[last2026]+" 2026 vs Normal");}}
+    badgeDefault();
+    const svg=document.getElementById("svg-pp"),W=svg.clientWidth||1000,H=320,padL=52,padR=16,padT=16,padB=44;
+    const vv=val.filter(v=>v!=null), nn=normal.filter(v=>v!=null);
+    if(isTemp && !hasT){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#6E7377" font-size="14">Sin datos de temperatura para esta estación</text>`;
+      b.className="badge na";b.textContent="—";bs.textContent="sin temperatura"; return; }
+    let yMin,yMax;
+    if(isTemp){let tmin=Math.min(...vv),tmax=Math.max(...vv);if(!isFinite(tmin)){tmin=0;tmax=1;} yMin=tmin<0?tmin*1.1:0; yMax=tmax*1.12;}
+    else {yMin=0; yMax=Math.max(...vv,...nn,5)*1.12;}
+    const sp=(W-padL-padR)/Math.max(axis.length-1,1), barW=Math.min(sp*0.62,20);
+    const X=i=>padL+barW/2+(W-padL-padR-barW)*(axis.length<=1?0.5:i/(axis.length-1));
+    const Y=v=>padT+(H-padT-padB)*(1-(v-yMin)/(yMax-yMin));
+    let g="";
+    for(let i=0;i<=4;i++){const yy=padT+(H-padT-padB)*(1-i/4);
+      g+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#ECE8DF"/>`;
+      g+=`<text x="${padL-7}" y="${yy+4}" text-anchor="end" font-size="10" fill="#96938B">${Math.round(yMin+(yMax-yMin)*i/4)}</text>`;}
+    g+=`<text x="${padL-7}" y="${padT-5}" text-anchor="end" font-size="9.5" fill="#96938B">${unit}</text>`;
+    axis.forEach((k,i)=>{const [y,mm]=k.split("-");
+      g+=`<text x="${X(i)}" y="${H-24}" text-anchor="middle" font-size="9" fill="#8A857A">${MES[+mm-1]}</text>`;
+      if(mm==="01"){g+=`<line x1="${X(i)}" y1="${padT}" x2="${X(i)}" y2="${H-padB}" stroke="#EEE9DF"/>`;
+        g+=`<text x="${X(i)}" y="${H-9}" text-anchor="middle" font-size="12" font-weight="800" fill="#6E7377">${y}</text>`;}});
+    let body="";
+    function seg(vals){const s=[];let c=[];for(let i=0;i<=vals.length;i++){const brk=i===vals.length||vals[i]==null||(i>0&&yr[i]!==yr[i-1]);
+      if(brk){if(c.length)s.push(c);c=[];}if(i<vals.length&&vals[i]!=null)c.push(i);}return s;}
+    if(isTemp){const y0=Y(0);
+      val.forEach((v,i)=>{if(v==null)return;const yv=Y(v),top=Math.min(yv,y0),h=Math.abs(y0-yv);
+        body+=`<rect x="${X(i)-barW/2}" y="${top}" width="${barW}" height="${h}" rx="1.5" fill="${NAVY}"/>`;});
+    } else if(men){
+      val.forEach((v,i)=>{if(v==null)return;const yv=Y(v),h=(H-padB)-yv;if(h<0)return;
+        body+=`<rect x="${X(i)-barW/2}" y="${yv}" width="${barW}" height="${h}" rx="1.5" fill="${NAVY}"/>`;});
+      let d="",open=false;normal.forEach((v,i)=>{if(v==null){open=false;return;}d+=(open?"L":"M")+X(i)+" "+Y(v)+" ";open=true;});
+      body+=`<path d="${d}" fill="none" stroke="${RED}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    } else {
+      seg(val).forEach(c=>{let d="M"+X(c[0])+" "+Y(val[c[0]]);c.forEach(i=>d+=" L"+X(i)+" "+Y(val[i]));
+        let a=d+" L"+X(c[c.length-1])+" "+Y(yMin)+" L"+X(c[0])+" "+Y(yMin)+" Z";
+        body+=`<path d="${a}" fill="rgba(14,40,65,.10)"/><path d="${d}" fill="none" stroke="${NAVY}" stroke-width="2.6" stroke-linejoin="round"/>`;});
+      seg(normal).forEach(c=>{let d="M"+X(c[0])+" "+Y(normal[c[0]]);c.forEach(i=>d+=" L"+X(i)+" "+Y(normal[i]));
+        body+=`<path d="${d}" fill="none" stroke="${RED}" stroke-width="2.4" stroke-dasharray="5 3" stroke-linejoin="round"/>`;});
+    }
+    svg.innerHTML=g+body+`<line class="guide" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="#0E2841" stroke-dasharray="3 3" opacity="0"/>`;
+    const tt=document.getElementById("tt-pp"),guide=svg.querySelector(".guide");
+    svg.onmousemove=e=>{const r=svg.getBoundingClientRect();const mxp=(e.clientX-r.left)*(W/r.width);
+      let bi=-1,bd=1e9;axis.forEach((k,i)=>{const dx=Math.abs(X(i)-mxp);if(dx<bd){bd=dx;bi=i;}});
+      if(bi<0)return;const px=X(bi);guide.setAttribute("x1",px);guide.setAttribute("x2",px);guide.setAttribute("opacity",.45);
+      tt.style.opacity=1;tt.style.left=(px*(r.width/W))+"px";tt.style.top="2px";tt.style.transform="translate(-50%,0)";
+      const [y,mm]=axis[bi].split("-");
+      if(isTemp){ setTempVar(y,+mm-1);
+        tt.innerHTML=`${MESL[+mm-1]} ${y}<br><b style="color:#bcd6f2">Temp: ${val[bi]==null?"–":val[bi].toFixed(1)+"°C"}</b>`;
+      } else { const f=v=>v==null?"–":Math.round(v)+" mm";
+        setPrecip(val[bi],normal[bi],(men?"":"acum. ")+MES[+mm-1]+" "+y+" vs Normal");
+        tt.innerHTML=`${MESL[+mm-1]} ${y}<br><b>${men?"Precip.":"Acum."}: ${f(val[bi])}</b><br>Normal: ${f(normal[bi])}`; }};
+    svg.onmouseleave=()=>{tt.style.opacity=0;guide.setAttribute("opacity",0);badgeDefault();};
+  }
+  drawPP();
+}
+// ---------- wire ----------
+let chartP, chartI;
+function wireToggle(id, key, after){
+  const box=document.getElementById(id);
+  box.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.m===state[key]);
+    b.onclick=()=>{ state[key]=b.dataset.m;
+      box.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); after(); };
+  });
+}
+window.addEventListener("resize",()=>{ chartP.draw(); chartI.draw(); });
+
+// ---------- init ----------
+(function init(){
+  const [y,m]=DATA.meta.ultimo_mes.split("-");
+  document.getElementById("lastm").textContent=MESL[+m-1]+" "+y;
+  document.getElementById("foot-novillo").textContent=DATA.meta.nota_novillo?("* "+DATA.meta.nota_novillo):"";
+  document.getElementById("foot-gen").textContent="Datos generados desde la planilla el "+DATA.meta.generado+". Archivo autocontenido (sin conexiones externas).";
+  renderProd(); renderIntl(); renderIns();
+  chartP=makeChart("p", seriesFromGroup(DATA.productos,()=>state.prod).concat(seriesFromGroup(DATA.internacional,()=>state.intl)));
+  chartI=makeChart("i", seriesFromGroup(DATA.insumos,()=>state.ins));
+  wireToggle("cur-prod","prod",()=>{ renderProd(); chartP.draw(); });
+  wireToggle("cur-intl","intl",()=>{ renderIntl(); chartP.draw(); });
+  wireToggle("cur-ins","ins",()=>{ renderIns(); chartI.draw(); });
+  chartP.draw(); chartI.draw();
+  initPrecip();
+})();
+</script>
+</body>
+</html>
